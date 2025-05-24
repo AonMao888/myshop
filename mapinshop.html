@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop Map</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            min-height: 100vh;
+        }
+
+        .pop {
+            position: fixed;
+            left: 0;
+            bottom: -500px;
+            z-index: 3000;
+            background: #fff;
+            width: 100%;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            border-top: 1px solid gray;
+            display: flex;
+            flex-direction: column;
+            transition: 0.4s;
+        }
+
+        .pop h1 {
+            font-size: 22px;
+            color: #333;
+            margin: 5px;
+            margin-left: 17px;
+            margin-top: 19px;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+        }
+
+        .pop .shop {
+            display: flex;
+        }
+
+        .pop hr {
+            width: 91%;
+            border: none;
+            height: 1px;
+            background: rgba(128, 128, 128, 0.32);
+        }
+
+        .pop h2 {
+            color: #ff9800;
+            margin: 5px;
+            font-size: 24px;
+            margin-left: 17px;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+        }
+
+        .pop p {
+            color: #333;
+            margin: 5px 17px;
+            font-size: 17px;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pop .close {
+            color: #333;
+            font-size: 18px;
+            position: absolute;
+            top: 9px;
+            right: 14px;
+            background: rgba(128, 128, 128, 0.126);
+            border-radius: 51px;
+            padding: 8px;
+            cursor: pointer;
+            border: none;
+            outline: none;
+        }
+
+        .pop .visit {
+            background: #ff9800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+            border: none;
+            padding: 12px;
+            margin: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .pop .visit i {
+            font-size: 19px;
+            margin-right: 3px;
+        }
+
+        .pop .visit span {
+            font-size: 16px;
+            margin: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div class="pop">
+        <button onclick="closep()" class="close"><i class="ri-close-large-line"></i></button>
+        <h1>About Shop</h1>
+        <hr />
+        <h2>Shop name</h2>
+        <p>description for test 1234567890, apple, below, car, dog, ear, fellow, gold, height, ill, jack</p>
+        <button onclick="go()" class="visit">
+            <i class="ri-external-link-line"></i>
+            <span>Visit this shop</span>
+        </button>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        const popdiv = document.querySelector('.pop');
+        const shopname = document.querySelector('.pop h2');
+        const shopdes = document.querySelector('.pop p');
+        let selected = '';
+
+        let url = new URL(window.location.href);
+        let shopid = url.searchParams.get('id');
+        if (shopid != '') {
+            let api = "https://myshop-tau-two.vercel.app/shop?id=" + shopid;
+            fetch(api).then(r => r.json()).then(all => {
+                if (all.status == 'success') {
+                    let mydata = all.data[0];
+                    console.log(mydata);
+
+                    var map = L.map('map').setView([mydata.lat, mydata.long], 23);
+                    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 17,
+                    }).addTo(map);
+
+                    var customMarkerHtml = `<div style="
+            font-size: 36px;
+            color: #ff4545;
+            text-align: center;
+          "><i class="ri-map-pin-fill"></i></ion-icon></div>`;
+                    var customIcon = L.divIcon({
+                        className: 'custom-marker-wrapper',
+                        html: customMarkerHtml,
+                        iconSize: [29, 29],
+                        iconAnchor: [19, 39],
+                        popupAnchor: [0, -24],
+                    });
+
+                    let markeri = L.marker([mydata.lat, mydata.long], { icon: customIcon })
+                        .addTo(map)                }
+            })
+        }
+
+        function closep() {
+            popdiv.style.bottom = '-500px'
+        }
+        function show(e) {
+            popdiv.style.bottom = 0;
+            shopname.textContent = e.shopname;
+            shopdes.textContent = e.shopdes;
+            selected = e;
+        }
+        function go() {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'navigate',
+                shopid: selected.shopid
+            }));
+        }
+    </script>
+</body>
+
+</html>
