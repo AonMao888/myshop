@@ -535,6 +535,44 @@ app.post('/delete/review/:id', async (req, res) => {
     }
 })
 
+//get all miniapp
+app.get('/miniapp', async (req, res) => {
+    let all = await db.collection('miniapp').get();
+    let f = all.docs.map((d) => ({
+        id: d.id,
+        ...d.data()
+    }));
+    res.json({
+        status: 'success',
+        data: f
+    })
+})
+
+//get specific miniapp
+app.get('/miniapp/:id', async (req, res) => {
+    let { id } = req.params;
+    if (id) {
+        let all = await db.collection('miniapp').doc(id).get();
+        if (all.exists) {
+            let da = all.data()
+            res.json({
+                status: 'success',
+                data: da
+            })
+        } else {
+            res.json({
+                status: 'fail',
+                text: 'No App found with this ID!'
+            })
+        }
+    } else {
+        res.json({
+            status: 'fail',
+            text: 'No ID found to get miniapp data.'
+        })
+    }
+})
+
 app.listen(80, () => {
     console.log('server started with port 80');
 })
