@@ -443,7 +443,7 @@ app.post('/add/review', async (req, res) => {
                 let month = date.getMonth();
                 let year = date.getFullYear();
                 let time = hour + ':' + min + '/' + day + '.' + month + '.' + year;
-                await db.collection('reviews').doc(data.shopid).set({
+                await db.collection('reviews').doc(data.shopid).update({
                     [data.posterid]: {
                         text: data.text,
                         posterid: data.posterid,
