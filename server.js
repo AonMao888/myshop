@@ -105,11 +105,11 @@ app.get('/shop', async (req, res) => {
 app.post('/update/shop', async (req, res) => {
     let data = req.body;
     if (data.uid) {
-        let t = await db.collection('shop').where('shopid', '==', data.currentshopid).get();
-        if (!t.empty) {
-            let gotshop = t.docs[0].data();
+        let t = await db.collection('shop').doc(data.shopdocid).get();
+        if (t.exists) {
+            let gotshop = t.data();
             if (gotshop.ownerid === data.uid) {
-                await t.docs[0].ref.update({
+                await t.ref.update({
                     shopname: data.shopname,
                     logo: data.logo,
                     shoptype: data.shoptype,
@@ -139,6 +139,64 @@ app.post('/update/shop', async (req, res) => {
         res.json({
             status: 'fail',
             text: 'Unable to update shop data!'
+        })
+    }
+})
+
+//block shop
+app.post('/block/shop', async (req, res) => {
+    let data = req.body;
+    try {
+        let t = await db.collection('shop').doc(data.shopdocid).get();
+        let shopdata = t.data();
+        if (shopdata.ownerid === data.requesterid) {
+            await t.ref.update({
+                status: 'block'
+            }).then(() => {
+                res.json({
+                    status: 'success',
+                    text: 'This shop was blocked!'
+                })
+            })
+        } else {
+            res.json({
+                status: 'fail',
+                text: 'You have no permission to request!'
+            })
+        }
+    } catch (e) {
+        res.json({
+            status: 'fail',
+            text: 'Something went wrong!'
+        })
+    }
+})
+
+//reactive shop
+app.post('/reactive/shop', async (req, res) => {
+    let data = req.body;
+    try {
+        let t = await db.collection('shop').doc(data.shopdocid).get();
+        let shopdata = t.data();
+        if (shopdata.ownerid === data.requesterid) {
+            await t.ref.update({
+                status: 'active'
+            }).then(() => {
+                res.json({
+                    status: 'success',
+                    text: 'This shop was reactived!'
+                })
+            })
+        } else {
+            res.json({
+                status: 'fail',
+                text: 'You have no permission to request!'
+            })
+        }
+    } catch (e) {
+        res.json({
+            status: 'fail',
+            text: 'Something went wrong!'
         })
     }
 })
@@ -186,7 +244,7 @@ app.post('/add/post', async (req, res) => {
         posteremail: postdata.posteremail,
         posterimg: postdata.posterimg,
         posterid: postdata.posterid,
-        shopdocid:postdata.shopdocid,
+        shopdocid: postdata.shopdocid,
         time: time,
         createdAt: admin.firestore.FieldValue.serverTimestamp()
     }).then(() => {
@@ -252,7 +310,7 @@ app.get('/post/:id', async (req, res) => {
 app.get('/postbyposter/:id', async (req, res) => {
     let { id } = req.params;
     if (id) {
-        let r = await db.collection('posts').where('posterid', '==', id).get();
+        let r = await db.collection('posts').where('shopdocid', '==', id).get();
         if (r.empty) {
             res.json({
                 status: 'fail',
@@ -499,7 +557,7 @@ app.post('/add/review', async (req, res) => {
                     posteremail: data.posteremail,
                     shopname: data.shopname,
                     shopid: data.shopid,
-                    shopdocid:shopdata.docs[0].id,
+                    shopdocid: shopdata.docs[0].id,
                     time: time,
                     fulltime: admin.firestore.FieldValue.serverTimestamp()
 
@@ -532,10 +590,10 @@ app.post('/add/review', async (req, res) => {
 //get reviews messages
 app.get('/get/review/:id', async (req, res) => {
     let { id } = req.params;
-    let data = await db.collection('reviews').where('shopdocid','==',id).get();
+    let data = await db.collection('reviews').where('shopdocid', '==', id).get();
     if (!data.empty) {
-        let reviewdata = await data.docs.map((docc)=>({
-            id:docc.id,
+        let reviewdata = await data.docs.map((docc) => ({
+            id: docc.id,
             ...docc.data()
         }));
         res.json({
@@ -552,7 +610,7 @@ app.get('/get/review/:id', async (req, res) => {
 
 //delete review
 app.post('/delete/review/:id', async (req, res) => {
-    let {id} = req.params;
+    let { id } = req.params;
     let data = req.body;
     if (data) {
         let dd = await db.collection('reviews').doc(id).get();
