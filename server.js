@@ -186,6 +186,7 @@ app.post('/add/post', async (req, res) => {
         posteremail: postdata.posteremail,
         posterimg: postdata.posterimg,
         posterid: postdata.posterid,
+        shopdocid:postdata.shopdocid,
         time: time,
         createdAt: admin.firestore.FieldValue.serverTimestamp()
     }).then(() => {
@@ -488,7 +489,7 @@ app.post('/add/review', async (req, res) => {
                 let month = date.getMonth();
                 let year = date.getFullYear();
                 let time = hour + ':' + min + '/' + day + '.' + month + '.' + year;
-                let docid = data.shopid + data.posterid + Math.floor(Math.random() * 99999);
+                let docid = data.shopdocid + data.posterid;
                 console.log(docid);
                 await db.collection('reviews').doc(docid).set({
                     text: data.text,
@@ -533,7 +534,10 @@ app.get('/get/review/:id', async (req, res) => {
     let { id } = req.params;
     let data = await db.collection('reviews').where('shopdocid','==',id).get();
     if (!data.empty) {
-        let reviewdata = data.docs[0].data();
+        let reviewdata = await data.docs.map((docc)=>({
+            id:docc.id,
+            ...docc.data()
+        }));
         res.json({
             status: 'success',
             data: reviewdata
@@ -548,15 +552,14 @@ app.get('/get/review/:id', async (req, res) => {
 
 //delete review
 app.post('/delete/review/:id', async (req, res) => {
+    let {id} = req.params;
     let data = req.body;
     if (data) {
-        let dd = await db.collection('reviews').doc(data.shopid).get();
+        let dd = await db.collection('reviews').doc(id).get();
         if (dd.exists) {
             let shopreview = dd.data();
-            if (shopreview[data.requesterid]) {
-                await db.collection('reviews').doc(data.shopid).update({
-                    [data.requesterid]: admin.firestore.FieldValue.delete()
-                }).then(() => {
+            if (shopreview.posterid === data.requesterid) {
+                await db.collection('reviews').doc(id).delete().then(() => {
                     res.json({
                         status: 'success',
                         text: 'Your review was successfully deleted.'
@@ -565,7 +568,7 @@ app.post('/delete/review/:id', async (req, res) => {
             } else {
                 res.json({
                     status: 'fail',
-                    text: 'You have no review to delete!'
+                    text: 'You have no permission to delete!'
                 })
             }
         } else {
