@@ -837,6 +837,51 @@ app.post('/decline/shop', async (req, res) => {
     }
 })
 
+//add miniapp
+app.post('/add/app', async (req, res) => {
+    let data = req.body;
+    await db.collection('miniapp').doc(data.appid).set({
+        logo:data.logo,
+        name:data.name,
+        type:data.type,
+        link:data.link,
+        appid:data.appid,
+        addtime:admin.firestore.FieldValue.serverTimestamp()
+    }).then(async () => {
+        res.json({
+            status: 'success',
+            text: 'Mini App was successfully added.'
+        })
+    })
+})
+
+//update miniapp
+app.post('/update/app', async (req, res) => {
+    let data = req.body;
+    await db.collection('miniapp').doc(data.appid).update({
+        logo:data.logo,
+        name:data.name,
+        type:data.type,
+        link:data.link,
+    }).then(async () => {
+        res.json({
+            status: 'success',
+            text: 'Mini App was successfully updated.'
+        })
+    })
+})
+
+//delete miniapp
+app.post('/delete/app', async (req, res) => {
+    let data = req.body;
+    await db.collection('miniapp').doc(data.appid).delete().then(async () => {
+        res.json({
+            status: 'success',
+            text: 'Mini App was successfully deleted.'
+        })
+    })
+})
+
 app.listen(80, () => {
     console.log('server started with port 80');
 })
